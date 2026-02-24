@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank4 — 수식 출력 품질 테스트</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <!-- KoPubBatang 폰트 (문제 본문용) -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard Variable', 'Pretendard', 'system-ui', 'sans-serif'],
+            serif: ['KoPubBatang', 'Noto Serif KR', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+              400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+              800: '#3730a3', 900: '#312e81', 950: '#1e1b4b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif; }
+
+    /* 문제 본문 영역 — 명조 폰트 */
+    .q-body {
+      font-family: 'KoPubBatang', 'Noto Serif KR', serif;
+      font-size: 15px;
+      line-height: 1.9;
+      color: #1f2937;
+    }
+
+    /* 수식과 텍스트 사이 행간 보정 */
+    .q-body .katex-display {
+      margin: 0.8em 0;
+    }
+    .q-body .katex {
+      font-size: 1.05em;
+    }
+
+    /* 보기 목록 */
+    .q-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 24px;
+      margin-top: 12px;
+      padding-left: 4px;
+    }
+    .q-choices.single-col {
+      grid-template-columns: 1fr;
+    }
+    .q-choice {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .q-choice-num {
+      flex-shrink: 0;
+      font-weight: 600;
+      color: #6b7280;
+    }
+
+    /* 문제 카드 */
+    .q-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+    }
+    .q-number {
+      font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      color: #4f46e5;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .q-type-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    /* 체크 항목 */
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #f9fafb;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .check-item:hover { background: #f3f4f6; }
+    .check-item .box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #d1d5db;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .check-item.checked .box {
+      background: #4f46e5;
+      border-color: #4f46e5;
+    }
+    .check-item.checked .box::after {
+      content: '✓';
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ========== 인쇄 스타일 ========== */
+    @media print {
+      /* UI 요소 숨김 */
+      .no-print { display: none !important; }
+
+      body {
+        background: white !important;
+        color: #000 !important;
+        font-size: 14px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .q-card {
+        border: none;
+        border-bottom: 1px solid #ddd;
+        border-radius: 0;
+        padding: 16px 0;
+        margin-bottom: 0;
+        box-shadow: none;
+      }
+      .q-body {
+        color: #000;
+        font-size: 14px;
+        line-height: 1.85;
+      }
+      .q-number {
+        color: #000;
+        font-size: 14px;
+      }
+      .q-type-badge {
+        border: 1px solid #999;
+        background: transparent;
+        color: #333;
+      }
+
+      /* A4 페이지 설정 */
+      @page {
+        size: A4;
+        margin: 15mm 18mm;
+      }
+
+      /* 문제 사이 페이지 나눔 방지 */
+      .q-card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- ===== 상단 툴바 (인쇄시 숨김) ===== -->
+  <header class="no-print sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <a href="index.html" class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm hover:bg-brand-700 transition-colors">B4</a>
+          <div>
+            <h1 class="text-gray-900 font-bold text-[15px]">수식 출력 품질 테스트</h1>
+            <p class="text-[11px] text-gray-500">KaTeX 화면 렌더링 + 인쇄 품질 검증</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-700 transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            인쇄 / PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-8">
+
+    <!-- ===== 안내 (인쇄시 숨김) ===== -->
+    <div class="no-print mb-8 p-5 rounded-xl bg-gradient-to-r from-brand-50 to-blue-50 border border-brand-200">
+      <h2 class="font-bold text-brand-700 text-sm mb-2">📋 테스트 방법</h2>
+      <ol class="text-sm text-gray-600 space-y-1 ml-4 list-decimal">
+        <li>아래 문제들의 <strong>화면 렌더링 상태</strong>를 확인하세요 (수식, 행간, 폰트)</li>
+        <li>우측 상단 <strong>"인쇄 / PDF"</strong> 버튼으로 실제 인쇄하거나 PDF로 저장하세요</li>
+        <li>화면과 인쇄물을 비교하며 <strong>품질 체크리스트</strong>를 확인하세요</li>
+      </ol>
+      <p class="text-xs text-gray-400 mt-3">💡 교재팀에서 실제 문제를 준비하면 아래 샘플을 교체합니다.</p>
+    </div>
+
+    <!-- ===== 품질 체크리스트 (인쇄시 숨김) ===== -->
+    <div class="no-print mb-8 p-5 rounded-xl bg-white border border-gray-200">
+      <h2 class="font-bold text-gray-900 text-sm mb-4">✅ 품질 체크리스트</h2>
+      <div class="check-grid">
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>수식이 깨지지 않는가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>분수로 행간이 벌어지지 않는가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>본문(명조)과 수식 폰트가 자연스러운가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>복잡한 수식도 정상 렌더링되는가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>보기 번호·정렬이 깔끔한가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>인쇄시 화면과 동일하게 나오는가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>인쇄시 A4에 적절히 배치되는가</span></div>
+        <div class="check-item" onclick="this.classList.toggle('checked')"><div class="box"></div><span>인쇄시 수식 선명도가 충분한가</span></div>
+      </div>
+    </div>
+
+    <!-- ===== 문제 영역 ===== -->
+    <div class="mb-4 flex items-center justify-between no-print">
+      <h2 class="font-bold text-gray-900">테스트 문항</h2>
+      <span class="text-xs text-gray-400">샘플 문항 — 교재팀 제공 문항으로 교체 예정</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 1: 단순 수식 (일차방정식)             -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">1 <span class="q-type-badge">단순 수식</span></div>
+      <div class="q-body">
+        다음 일차방정식을 풀어라.
+        $$3x + 7 = 22$$
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 2: 분수 포함 (행간 테스트 핵심)        -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">2 <span class="q-type-badge">분수 — 행간 테스트</span></div>
+      <div class="q-body">
+        다음 식을 간단히 하여라.
+        $$\frac{x^2 - 4}{x + 2} \div \frac{x - 2}{x^2 + 4x + 4}$$
+        위 식의 결과에서 \(x = 3\)일 때의 값을 구하여라.
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 3: 분수+루트 복합                     -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">3 <span class="q-type-badge">분수 + 루트</span></div>
+      <div class="q-body">
+        다음 식의 값을 구하여라.
+        $$\frac{\sqrt{3} + 1}{\sqrt{3} - 1} - \frac{\sqrt{3} - 1}{\sqrt{3} + 1}$$
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 4: 객관식 (보기 2열 배치)              -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">4 <span class="q-type-badge">객관식 — 보기 2열</span></div>
+      <div class="q-body">
+        이차방정식 \(x^2 - 5x + 6 = 0\)의 두 근의 합은?
+        <div class="q-choices">
+          <div class="q-choice"><span class="q-choice-num">①</span> \(3\)</div>
+          <div class="q-choice"><span class="q-choice-num">②</span> \(5\)</div>
+          <div class="q-choice"><span class="q-choice-num">③</span> \(6\)</div>
+          <div class="q-choice"><span class="q-choice-num">④</span> \(7\)</div>
+          <div class="q-choice"><span class="q-choice-num">⑤</span> \(11\)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 5: 객관식 (보기에 복잡한 수식)         -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">5 <span class="q-type-badge">객관식 — 보기 수식</span></div>
+      <div class="q-body">
+        함수 \(f(x) = x^3 - 3x + 2\)에 대하여 \(f'(x) = 0\)을 만족하는 모든 \(x\)의 값의 곱은?
+        <div class="q-choices">
+          <div class="q-choice"><span class="q-choice-num">①</span> \(-1\)</div>
+          <div class="q-choice"><span class="q-choice-num">②</span> \(-\frac{1}{3}\)</div>
+          <div class="q-choice"><span class="q-choice-num">③</span> \(0\)</div>
+          <div class="q-choice"><span class="q-choice-num">④</span> \(\frac{1}{3}\)</div>
+          <div class="q-choice"><span class="q-choice-num">⑤</span> \(1\)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 6: 복잡한 수식 (적분)                  -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">6 <span class="q-type-badge">적분</span></div>
+      <div class="q-body">
+        다음 정적분의 값을 구하여라.
+        $$\int_{0}^{\pi} \frac{\sin x}{1 + \cos^2 x} \, dx$$
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 7: 시그마 + 급수                       -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">7 <span class="q-type-badge">시그마 + 급수</span></div>
+      <div class="q-body">
+        다음 급수의 합을 구하여라.
+        $$\sum_{k=1}^{n} \frac{1}{k(k+1)} = \frac{1}{1 \cdot 2} + \frac{1}{2 \cdot 3} + \frac{1}{3 \cdot 4} + \cdots + \frac{1}{n(n+1)}$$
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 8: 행렬                               -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">8 <span class="q-type-badge">행렬</span></div>
+      <div class="q-body">
+        행렬 \(A = \begin{pmatrix} 2 & 1 \\ 3 & 4 \end{pmatrix}\)에 대하여 \(A^2 - 6A + 5E\)의 값을 구하여라.
+        (단, \(E\)는 단위행렬이다.)
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 9: 극한                               -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">9 <span class="q-type-badge">극한</span></div>
+      <div class="q-body">
+        다음 극한값을 구하여라.
+        $$\lim_{x \to 0} \frac{\sqrt{1 + x} - \sqrt{1 - x}}{x}$$
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 10: 긴 서술형 (텍스트+수식 혼합)       -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">10 <span class="q-type-badge">서술형 — 텍스트+수식 혼합</span></div>
+      <div class="q-body">
+        어떤 학교의 수학 동아리 학생 30명을 대상으로 수학 시험 점수를 조사하였더니, 평균이 72점이고 표준편차가 8점이었다. 이 중에서 임의로 뽑은 한 학생의 점수를 확률변수 \(X\)라 할 때, \(P(64 \leq X \leq 80)\)의 값을 구하여라. (단, \(Z = \frac{X - \mu}{\sigma}\)로 표준화하며, \(P(0 \leq Z \leq 1) = 0.3413\)이다.)
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 11: 연립방정식 (중괄호 정렬)           -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">11 <span class="q-type-badge">연립방정식</span></div>
+      <div class="q-body">
+        다음 연립방정식을 풀어라.
+        $$\begin{cases} 2x + 3y = 12 \\ 4x - y = 5 \end{cases}$$
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 12: 표 포함 문제                       -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">12 <span class="q-type-badge">표 포함</span></div>
+      <div class="q-body">
+        확률변수 \(X\)의 확률분포표가 다음과 같을 때, \(E(X)\)와 \(V(X)\)를 구하여라.
+        <div style="overflow-x: auto; margin: 16px 0;">
+          <table style="border-collapse: collapse; width: 100%; max-width: 420px; margin: 0 auto; font-size: 14px;">
+            <thead>
+              <tr style="border-bottom: 2px solid #374151;">
+                <th style="padding: 10px 16px; text-align: center; color: #6b7280; font-weight: 600;">\(X\)</th>
+                <th style="padding: 10px 16px; text-align: center;">\(0\)</th>
+                <th style="padding: 10px 16px; text-align: center;">\(1\)</th>
+                <th style="padding: 10px 16px; text-align: center;">\(2\)</th>
+                <th style="padding: 10px 16px; text-align: center;">\(3\)</th>
+                <th style="padding: 10px 16px; text-align: center; color: #6b7280; font-weight: 600;">합계</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 10px 16px; text-align: center; color: #6b7280; font-weight: 600;">\(P(X = x)\)</td>
+                <td style="padding: 10px 16px; text-align: center;">\(\frac{1}{8}\)</td>
+                <td style="padding: 10px 16px; text-align: center;">\(\frac{3}{8}\)</td>
+                <td style="padding: 10px 16px; text-align: center;">\(\frac{3}{8}\)</td>
+                <td style="padding: 10px 16px; text-align: center;">\(\frac{1}{8}\)</td>
+                <td style="padding: 10px 16px; text-align: center;">\(1\)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 13: 복잡한 분수 중첩                   -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">13 <span class="q-type-badge">분수 중첩 — 행간 극한 테스트</span></div>
+      <div class="q-body">
+        다음 식을 간단히 하여라.
+        $$\cfrac{1}{1 + \cfrac{1}{1 + \cfrac{1}{1 + x}}}$$
+        위 식에서 \(x = \frac{\sqrt{5} - 1}{2}\)일 때의 값을 구하여라.
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 14: 삼각함수 + 복잡한 인라인 수식      -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">14 <span class="q-type-badge">삼각함수 — 인라인 복합</span></div>
+      <div class="q-body">
+        \(0 \leq \theta < 2\pi\)일 때, 방정식 \(\sin^2\theta - \cos\theta = \frac{1}{4}\)을 만족하는 모든 \(\theta\)의 값의 합을 구하여라. (단, \(\sin^2\theta + \cos^2\theta = 1\)을 이용하여 \(\cos\theta\)에 대한 이차방정식으로 변환한다.)
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--  유형 15: 벡터                              -->
+    <!-- ========================================== -->
+    <div class="q-card">
+      <div class="q-number">15 <span class="q-type-badge">벡터</span></div>
+      <div class="q-body">
+        두 벡터 \(\vec{a} = (2, -1, 3)\), \(\vec{b} = (1, 4, -2)\)에 대하여 다음을 구하여라.
+        <div class="q-choices single-col">
+          <div class="q-choice"><span class="q-choice-num">(1)</span> \(\vec{a} \cdot \vec{b}\)</div>
+          <div class="q-choice"><span class="q-choice-num">(2)</span> \(|\vec{a} \times \vec{b}|\)</div>
+          <div class="q-choice"><span class="q-choice-num">(3)</span> 두 벡터가 이루는 각 \(\theta\) (단, \(\cos\theta = \frac{\vec{a} \cdot \vec{b}}{|\vec{a}||\vec{b}|}\))</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 교재팀 문항 추가 영역 ===== -->
+    <div class="no-print mt-8 p-6 rounded-xl border-2 border-dashed border-gray-300 text-center">
+      <p class="text-gray-400 text-sm">📌 교재팀에서 제공하는 실제 문항이 여기에 추가됩니다</p>
+      <p class="text-gray-300 text-xs mt-1">특히 v3에서 출력 문제가 있었던 문항 위주로 테스트</p>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="no-print mt-12 pt-6 border-t border-gray-200 text-center text-xs text-gray-400">
+      Bank4 — 수식 출력 품질 테스트 · KaTeX v0.16.9 · KoPubBatang 본문
+    </footer>
+  </main>
+
+  <!-- KaTeX 자동 렌더링 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '\\[', right: '\\]', display: true },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '$', right: '$', display: false }
+        ],
+        throwOnError: false,
+        errorColor: '#dc2626'
+      });
+    });
+  </script>
+</body>
+</html>

@@ -6,7 +6,7 @@
 - 배포: Vercel | 레포: github.com/jadegirl/Bank4
 
 ## 현재 상태
-- **Phase 0**: HTML 목업 제작 → 사장님 디자인 승인 대기
+- **Phase 0**: HTML 목업 제작 → 본부장님 디자인 승인 대기
 - 코딩 미착수 (승인 후 React 전환)
 
 ## 기술스택
