@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank4 — 오답시험 만들기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard Variable', 'Pretendard', 'system-ui', 'sans-serif'],
+            serif: ['KoPubBatang', 'Noto Serif KR', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+              400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+              800: '#3730a3', 900: '#312e81', 950: '#1e1b4b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .dark ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    .sidebar { transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .sidebar-label { transition: opacity 0.2s ease, width 0.2s ease; white-space: nowrap; }
+    .sidebar.collapsed .sidebar-label { opacity: 0; width: 0; overflow: hidden; }
+    .sidebar.collapsed .submenu { display: none !important; }
+    .sidebar.collapsed .menu-arrow { display: none; }
+    .sidebar.collapsed .menu-item:hover .sidebar-tooltip { display: flex; opacity: 1; }
+    .sidebar-tooltip {
+      display: none; opacity: 0; position: absolute; left: 100%; top: 50%;
+      transform: translateY(-50%); margin-left: 8px; padding: 4px 10px;
+      border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap;
+      z-index: 100; pointer-events: none; transition: opacity 0.15s ease;
+    }
+    .dark .sidebar-tooltip { background: #374151; color: #f3f4f6; }
+    .sidebar-tooltip { background: #1f2937; color: #f9fafb; }
+    .submenu { overflow: hidden; transition: max-height 0.25s ease, opacity 0.2s ease; max-height: 0; opacity: 0; }
+    .submenu.open { max-height: 300px; opacity: 1; }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .question-body { font-family: 'KoPubBatang', 'Noto Serif KR', serif; }
+    .custom-check {
+      width: 16px; height: 16px; border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s ease; flex-shrink: 0;
+    }
+    .dark .custom-check { border: 1.5px solid #4b5563; background: transparent; }
+    .custom-check { border: 1.5px solid #d1d5db; background: #ffffff; }
+    .custom-check.checked { background: #6366f1; border-color: #6366f1; }
+    .custom-check.checked::after { content: '✓'; color: white; font-size: 10px; font-weight: 700; }
+    .theme-transition { transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+    .step-indicator { display: flex; align-items: center; gap: 0; }
+    .step-dot { 
+      width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; 
+      justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+    .step-dot.active { background: #6366f1; color: white; }
+    .step-dot.completed { background: #4ade80; color: white; }
+    .dark .step-dot.inactive { background: #1f2937; color: #6b7280; border: 1.5px solid #374151; }
+    .step-dot.inactive { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+    .step-line { width: 40px; height: 2px; flex-shrink: 0; }
+    .dark .step-line { background: #1f2937; }
+    .step-line { background: #e5e7eb; }
+    .step-line.active { background: #6366f1; }
+    .step-line.completed { background: #4ade80; }
+    .student-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+    .student-card.selected { border-color: #6366f1 !important; }
+    .dark .student-card.selected { border-color: #818cf8 !important; box-shadow: 0 0 0 1px #818cf8; }
+    .wrong-item { transition: all 0.2s ease; }
+    .wrong-item.excluded { opacity: 0.4; }
+    .wrong-item .exclude-btn { opacity: 0; transition: opacity 0.15s; }
+    .wrong-item:hover .exclude-btn { opacity: 1; }
+    .floating-bar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
+    .floating-bar.hidden { transform: translateY(100px); opacity: 0; pointer-events: none; }
+    .custom-dropdown { position: relative; }
+    .dropdown-menu { 
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+      max-height: 200px; overflow-y: scroll;
+      opacity: 0; transform: translateY(-4px); pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .dropdown-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .star { color: #374151; transition: color 0.1s; }
+    .star.filled { color: #fbbf24; }
+    .dark .star { color: #4b5563; }
+  </style>
+</head>
+<body class="dark:bg-[#0a0e17] bg-gray-50 dark:text-gray-300 text-gray-700 min-h-screen flex theme-transition">
+
+  <!-- ═══════════════ 사이드바 (공통) ═══════════════ -->
+  <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full z-40 flex flex-col dark:bg-[#111827] bg-white dark:border-r dark:border-gray-800/60 border-r border-gray-200 theme-transition" style="width: 240px;">
+    <div class="flex items-center h-14 px-4 gap-3 border-b dark:border-gray-800/60 border-gray-200 flex-shrink-0">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0 btn-primary">B4</div>
+      <span class="sidebar-label text-sm font-bold dark:text-white text-gray-900">문제은행 v4</span>
+    </div>
+    <nav class="flex-1 overflow-y-scroll py-3 px-2 space-y-0.5">
+      <div class="menu-item relative">
+        <a href="mockup-school-exam.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="sidebar-label">대시보드</span>
+        </a>
+        <div class="sidebar-tooltip">대시보드</div>
+      </div>
+      <div class="menu-item relative">
+        <button onclick="toggleSubmenu('exam-sub')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          <span class="sidebar-label">시험출제</span>
+          <svg class="menu-arrow w-4 h-4 ml-auto flex-shrink-0 transition-transform duration-200 dark:text-gray-500 text-gray-400" id="exam-arrow" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="sidebar-tooltip">시험출제</div>
+        <div class="submenu" id="exam-sub">
+          <div class="ml-8 mr-2 mt-1 space-y-0.5 border-l dark:border-gray-700/50 border-gray-200 pl-3">
+            <a href="#" class="block py-1.5 text-xs dark:text-gray-500 text-gray-500 dark:hover:text-gray-300 hover:text-gray-700 transition-colors">시험지 목록</a>
+            <a href="#" class="block py-1.5 text-xs dark:text-gray-500 text-gray-500 dark:hover:text-gray-300 hover:text-gray-700 transition-colors">일일테스트</a>
+            <a href="#" class="block py-1.5 text-xs dark:text-gray-500 text-gray-500 dark:hover:text-gray-300 hover:text-gray-700 transition-colors">빠른테스트</a>
+            <a href="#" class="block py-1.5 text-xs dark:text-gray-500 text-gray-500 dark:hover:text-gray-300 hover:text-gray-700 transition-colors">제로/브릿지</a>
+            <a href="#" class="block py-1.5 text-xs dark:text-gray-500 text-gray-500 dark:hover:text-gray-300 hover:text-gray-700 transition-colors">진단평가</a>
+            <a href="mockup-school-exam.html" class="block py-1.5 text-xs dark:text-gray-500 text-gray-500 dark:hover:text-gray-300 hover:text-gray-700 transition-colors">학교별 기출</a>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <span class="sidebar-label">성적처리</span>
+        </a>
+        <div class="sidebar-tooltip">성적처리</div>
+      </div>
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          <span class="sidebar-label">클리닉</span>
+        </a>
+        <div class="sidebar-tooltip">클리닉</div>
+      </div>
+      <!-- 오답시험 (활성) -->
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-brand-400 text-brand-600 dark:bg-brand-950/40 bg-brand-50 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span class="sidebar-label">오답시험</span>
+        </a>
+        <div class="sidebar-tooltip">오답시험</div>
+      </div>
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          <span class="sidebar-label">개념나래</span>
+        </a>
+        <div class="sidebar-tooltip">개념나래</div>
+      </div>
+      <div class="my-3 mx-3 border-t dark:border-gray-800/60 border-gray-200"></div>
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+          <span class="sidebar-label">콘텐츠 관리</span>
+        </a>
+        <div class="sidebar-tooltip">콘텐츠 관리</div>
+      </div>
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+          <span class="sidebar-label">AI 센터</span>
+        </a>
+        <div class="sidebar-tooltip">AI 센터</div>
+      </div>
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.997.398-.997.95v8a1 1 0 0 0 1 1Z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>
+          <span class="sidebar-label">통계</span>
+        </a>
+        <div class="sidebar-tooltip">통계</div>
+      </div>
+    </nav>
+    <div class="flex-shrink-0 border-t dark:border-gray-800/60 border-gray-200 p-2 space-y-0.5">
+      <div class="menu-item relative">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+          <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="sidebar-label">설정</span>
+        </a>
+        <div class="sidebar-tooltip">설정</div>
+      </div>
+      <button onclick="toggleSidebar()" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm dark:text-gray-500 text-gray-400 dark:hover:bg-gray-800/60 hover:bg-gray-100 transition-colors">
+        <svg id="collapse-icon" class="w-[18px] h-[18px] flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg>
+        <span class="sidebar-label">접기</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══════════════ 메인 영역 ═══════════════ -->
+  <div id="main-area" class="flex-1 flex flex-col min-h-screen transition-[margin] duration-[250ms]" style="margin-left: 240px;">
+
+    <!-- 헤더 -->
+    <header class="sticky top-0 z-30 h-14 flex items-center justify-between px-6 dark:bg-[#0a0e17]/80 bg-white/80 border-b dark:border-gray-800/60 border-gray-200 theme-transition" style="backdrop-filter: saturate(180%) brightness(0.9);">
+      <div class="flex items-center gap-2 text-sm">
+        <span class="dark:text-white text-gray-900 font-semibold">오답시험 만들기</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="w-8 h-8 rounded-lg dark:hover:bg-gray-800 hover:bg-gray-100 flex items-center justify-center dark:text-gray-400 text-gray-500 transition-colors">
+          <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <button class="relative w-8 h-8 rounded-lg dark:hover:bg-gray-800 hover:bg-gray-100 flex items-center justify-center dark:text-gray-400 text-gray-500 transition-colors">
+          <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <div class="w-px h-5 dark:bg-gray-700 bg-gray-200 mx-1"></div>
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg dark:hover:bg-gray-800 hover:bg-gray-100 flex items-center justify-center dark:text-gray-400 text-gray-500 transition-colors" title="테마 전환">
+          <svg class="w-[18px] h-[18px] hidden dark:block" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="w-[18px] h-[18px] block dark:hidden" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+        <div class="flex items-center gap-2 ml-1 cursor-pointer dark:hover:bg-gray-800 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold">김</div>
+          <span class="sidebar-label text-sm dark:text-gray-300 text-gray-700 font-medium">김강사</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 콘텐츠 -->
+    <main class="flex-1 overflow-y-scroll p-5">
+      
+      <!-- 스텝 인디케이터 -->
+      <div class="flex items-center justify-center mb-6">
+        <div class="step-indicator">
+          <div class="flex items-center gap-2">
+            <div class="step-dot completed" id="step-dot-1">✓</div>
+            <span class="text-xs font-medium dark:text-gray-300 text-gray-700">학생 선택</span>
+          </div>
+          <div class="step-line completed mx-3"></div>
+          <div class="flex items-center gap-2">
+            <div class="step-dot active" id="step-dot-2">2</div>
+            <span class="text-xs font-medium dark:text-brand-400 text-brand-600">오답 확인</span>
+          </div>
+          <div class="step-line mx-3"></div>
+          <div class="flex items-center gap-2">
+            <div class="step-dot inactive" id="step-dot-3">3</div>
+            <span class="text-xs font-medium dark:text-gray-500 text-gray-400">시험지 생성</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 메인 콘텐츠: 2컬럼 레이아웃 -->
+      <div class="flex gap-5">
+        
+        <!-- ═══ 좌측: 학생 정보 + 필터 ═══ -->
+        <div class="w-[320px] flex-shrink-0 space-y-4">
+          
+          <!-- 선택된 학생 카드 -->
+          <div class="rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold dark:text-white text-gray-900">선택된 학생</h3>
+              <button class="text-xs dark:text-brand-400 text-brand-600 dark:hover:text-brand-300 hover:text-brand-700 font-medium transition-colors">변경</button>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-lg dark:bg-[#0d1117] bg-gray-50">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">이</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-semibold dark:text-white text-gray-900">이수진</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-200 dark:text-gray-400 text-gray-600">고2</span>
+                </div>
+                <div class="text-xs dark:text-gray-500 text-gray-400 mt-0.5">고2 수학 기본반 · 세화여고</div>
+              </div>
+            </div>
+            <!-- 학생 통계 요약 -->
+            <div class="grid grid-cols-3 gap-2 mt-3">
+              <div class="text-center p-2 rounded-lg dark:bg-[#0d1117] bg-gray-50">
+                <div class="text-lg font-bold dark:text-white text-gray-900">47</div>
+                <div class="text-[10px] dark:text-gray-500 text-gray-400">총 응시</div>
+              </div>
+              <div class="text-center p-2 rounded-lg dark:bg-[#0d1117] bg-gray-50">
+                <div class="text-lg font-bold text-red-400">23</div>
+                <div class="text-[10px] dark:text-gray-500 text-gray-400">누적 오답</div>
+              </div>
+              <div class="text-center p-2 rounded-lg dark:bg-[#0d1117] bg-gray-50">
+                <div class="text-lg font-bold dark:text-yellow-400 text-yellow-600">68%</div>
+                <div class="text-[10px] dark:text-gray-500 text-gray-400">평균 정답률</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 필터 옵션 -->
+          <div class="rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition">
+            <h3 class="text-sm font-semibold dark:text-white text-gray-900 mb-3">오답 필터</h3>
+            
+            <!-- 기간 -->
+            <div class="mb-3">
+              <label class="block text-xs font-medium dark:text-gray-400 text-gray-600 mb-1.5">기간</label>
+              <div class="flex gap-1.5">
+                <button class="flex-1 px-2 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-colors">전체</button>
+                <button class="flex-1 px-2 py-1.5 text-xs rounded-lg dark:text-brand-400 text-brand-600 font-medium btn-primary text-white">최근 3개월</button>
+                <button class="flex-1 px-2 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-colors">최근 1개월</button>
+              </div>
+            </div>
+
+            <!-- 과목 -->
+            <div class="mb-3">
+              <label class="block text-xs font-medium dark:text-gray-400 text-gray-600 mb-1.5">과목</label>
+              <div class="custom-dropdown" id="subject-filter">
+                <button onclick="toggleDropdown('subject-filter')" class="w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg border dark:border-gray-700 border-gray-300 dark:bg-[#0d1117] bg-gray-50 dark:text-gray-300 text-gray-700 transition-all">
+                  <span>수학Ⅰ</span>
+                  <svg class="w-4 h-4 dark:text-gray-500 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="dropdown-menu mt-1 rounded-lg border dark:border-gray-700 border-gray-200 dark:bg-[#1a1f2e] bg-white shadow-xl py-1">
+                  <button class="w-full text-left px-3 py-1.5 text-sm dark:text-gray-300 text-gray-700 dark:hover:bg-gray-700/50 hover:bg-gray-100">전체</button>
+                  <button class="w-full text-left px-3 py-1.5 text-sm dark:text-brand-400 text-brand-600 dark:bg-brand-950/30 bg-brand-50">수학Ⅰ</button>
+                  <button class="w-full text-left px-3 py-1.5 text-sm dark:text-gray-300 text-gray-700 dark:hover:bg-gray-700/50 hover:bg-gray-100">수학Ⅱ</button>
+                  <button class="w-full text-left px-3 py-1.5 text-sm dark:text-gray-300 text-gray-700 dark:hover:bg-gray-700/50 hover:bg-gray-100">미적분</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 오답 횟수 -->
+            <div class="mb-3">
+              <label class="block text-xs font-medium dark:text-gray-400 text-gray-600 mb-1.5">오답 횟수</label>
+              <div class="flex gap-1.5">
+                <button class="flex-1 px-2 py-1.5 text-xs rounded-lg btn-primary text-white font-medium">1회 이상</button>
+                <button class="flex-1 px-2 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-colors">2회 이상</button>
+                <button class="flex-1 px-2 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-colors">3회+</button>
+              </div>
+            </div>
+
+            <!-- 난이도 범위 -->
+            <div class="mb-4">
+              <label class="block text-xs font-medium dark:text-gray-400 text-gray-600 mb-1.5">난이도</label>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-0.5">
+                  <span class="star filled text-sm">★</span>
+                  <span class="star filled text-sm">★</span>
+                  <span class="star text-sm">★</span>
+                  <span class="star text-sm">★</span>
+                  <span class="star text-sm">★</span>
+                </div>
+                <span class="text-xs dark:text-gray-500 text-gray-400">~</span>
+                <div class="flex items-center gap-0.5">
+                  <span class="star filled text-sm">★</span>
+                  <span class="star filled text-sm">★</span>
+                  <span class="star filled text-sm">★</span>
+                  <span class="star filled text-sm">★</span>
+                  <span class="star filled text-sm">★</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="w-full px-3 py-2 text-sm rounded-lg text-white font-medium btn-primary transition-all">필터 적용</button>
+          </div>
+
+          <!-- 단원별 오답 분포 -->
+          <div class="rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition">
+            <h3 class="text-sm font-semibold dark:text-white text-gray-900 mb-3">단원별 오답 분포</h3>
+            <div class="space-y-2.5">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs dark:text-gray-300 text-gray-700">지수함수</span>
+                  <span class="text-xs font-semibold text-red-400">8문제</span>
+                </div>
+                <div class="h-1.5 rounded-full dark:bg-gray-800 bg-gray-200 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-red-500 to-red-400" style="width: 72%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs dark:text-gray-300 text-gray-700">로그함수</span>
+                  <span class="text-xs font-semibold dark:text-yellow-400 text-yellow-600">5문제</span>
+                </div>
+                <div class="h-1.5 rounded-full dark:bg-gray-800 bg-gray-200 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400" style="width: 45%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs dark:text-gray-300 text-gray-700">삼각함수</span>
+                  <span class="text-xs font-semibold dark:text-yellow-400 text-yellow-600">4문제</span>
+                </div>
+                <div class="h-1.5 rounded-full dark:bg-gray-800 bg-gray-200 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400" style="width: 36%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs dark:text-gray-300 text-gray-700">수열</span>
+                  <span class="text-xs font-semibold dark:text-green-400 text-green-600">3문제</span>
+                </div>
+                <div class="h-1.5 rounded-full dark:bg-gray-800 bg-gray-200 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-green-500 to-green-400" style="width: 27%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs dark:text-gray-300 text-gray-700">집합과 명제</span>
+                  <span class="text-xs font-semibold dark:text-green-400 text-green-600">3문제</span>
+                </div>
+                <div class="h-1.5 rounded-full dark:bg-gray-800 bg-gray-200 overflow-hidden">
+                  <div class="h-full rounded-full bg-gradient-to-r from-green-500 to-green-400" style="width: 27%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ 우측: 오답 문제 목록 ═══ -->
+        <div class="flex-1 min-w-0">
+          <!-- 상단 액션 바 -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <h2 class="text-sm font-semibold dark:text-white text-gray-900">누적 오답 문제</h2>
+              <span class="text-sm font-bold dark:text-red-400 text-red-600">23개</span>
+              <span class="text-xs dark:text-gray-500 text-gray-400">중 <span class="dark:text-brand-400 text-brand-600 font-semibold" id="include-count">20</span>개 시험에 포함</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleAllInclude()" class="px-3 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-colors font-medium">전체 선택</button>
+              <div class="custom-dropdown" id="sort-dropdown">
+                <button onclick="toggleDropdown('sort-dropdown')" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-all">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+                  <span>오답 횟수순</span>
+                </button>
+                <div class="dropdown-menu mt-1 rounded-lg border dark:border-gray-700 border-gray-200 dark:bg-[#1a1f2e] bg-white shadow-xl py-1 min-w-[130px]" style="right:0; left:auto;">
+                  <button class="w-full text-left px-3 py-1.5 text-xs dark:text-brand-400 text-brand-600 font-medium">오답 횟수순</button>
+                  <button class="w-full text-left px-3 py-1.5 text-xs dark:text-gray-300 text-gray-700 dark:hover:bg-gray-700/50 hover:bg-gray-100">최근 오답순</button>
+                  <button class="w-full text-left px-3 py-1.5 text-xs dark:text-gray-300 text-gray-700 dark:hover:bg-gray-700/50 hover:bg-gray-100">난이도 높은순</button>
+                  <button class="w-full text-left px-3 py-1.5 text-xs dark:text-gray-300 text-gray-700 dark:hover:bg-gray-700/50 hover:bg-gray-100">단원별</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 오답 문제 리스트 -->
+          <div class="space-y-3 pb-20">
+            
+            <!-- 오답 문제 1 -->
+            <div class="wrong-item rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition" data-id="w1">
+              <div class="flex items-start gap-3">
+                <div class="custom-check checked flex-shrink-0 mt-1" onclick="toggleWrongItem(this)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400">3회 오답</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">지수함수</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수학Ⅰ</span>
+                    <span class="flex items-center gap-0.5 text-[10px]"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span></span>
+                    <span class="ml-auto text-[10px] dark:text-gray-600 text-gray-400">최근 오답: 2024.12.15</span>
+                  </div>
+                  <div class="question-body text-sm dark:text-gray-200 text-gray-800 leading-relaxed">
+                    <span class="katex-inline">2^{x+1} + 2^{x-1} = 5</span>를 만족하는 <span class="katex-inline">x</span>의 값을 구하시오.
+                  </div>
+                  <div class="mt-2 flex items-center gap-3 text-[11px] dark:text-gray-500 text-gray-400">
+                    <span>출처: 세화여고 2024 1학기 중간</span>
+                    <span>·</span>
+                    <span>오답일: 10/15, 11/20, 12/15</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 오답 문제 2 -->
+            <div class="wrong-item rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition" data-id="w2">
+              <div class="flex items-start gap-3">
+                <div class="custom-check checked flex-shrink-0 mt-1" onclick="toggleWrongItem(this)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400">2회 오답</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">로그함수</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수학Ⅰ</span>
+                    <span class="flex items-center gap-0.5 text-[10px]"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span><span class="star">★</span></span>
+                    <span class="ml-auto text-[10px] dark:text-gray-600 text-gray-400">최근 오답: 2024.12.10</span>
+                  </div>
+                  <div class="question-body text-sm dark:text-gray-200 text-gray-800 leading-relaxed">
+                    <span class="katex-inline">\log_2(x+3) + \log_2(x-1) = 3</span>을 만족하는 양수 <span class="katex-inline">x</span>의 값은?
+                  </div>
+                  <div class="mt-2 flex items-center gap-3 text-[11px] dark:text-gray-500 text-gray-400">
+                    <span>출처: 중동고 2023 2학기 기말</span>
+                    <span>·</span>
+                    <span>오답일: 11/05, 12/10</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 오답 문제 3 -->
+            <div class="wrong-item rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition" data-id="w3">
+              <div class="flex items-start gap-3">
+                <div class="custom-check checked flex-shrink-0 mt-1" onclick="toggleWrongItem(this)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold dark:bg-yellow-500/20 bg-yellow-100 dark:text-yellow-400 text-yellow-700">2회 오답</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">지수함수</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수학Ⅰ</span>
+                    <span class="flex items-center gap-0.5 text-[10px]"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span></span>
+                    <span class="ml-auto text-[10px] dark:text-gray-600 text-gray-400">최근 오답: 2024.11.28</span>
+                  </div>
+                  <div class="question-body text-sm dark:text-gray-200 text-gray-800 leading-relaxed">
+                    함수 <span class="katex-inline">f(x) = 3^{2x} - 4 \cdot 3^x + a</span>의 최솟값이 <span class="katex-inline">-1</span>일 때, 상수 <span class="katex-inline">a</span>의 값을 구하시오.
+                  </div>
+                  <div class="mt-2 flex items-center gap-3 text-[11px] dark:text-gray-500 text-gray-400">
+                    <span>출처: 서울고 2024 1학기 기말</span>
+                    <span>·</span>
+                    <span>오답일: 10/28, 11/28</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 오답 문제 4 (제외된 상태) -->
+            <div class="wrong-item excluded rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition" data-id="w4">
+              <div class="flex items-start gap-3">
+                <div class="custom-check flex-shrink-0 mt-1" onclick="toggleWrongItem(this)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold dark:bg-gray-700 bg-gray-200 dark:text-gray-400 text-gray-500">1회 오답</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">삼각함수</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수학Ⅰ</span>
+                    <span class="flex items-center gap-0.5 text-[10px]"><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></span>
+                    <span class="ml-auto text-[10px] dark:text-gray-600 text-gray-400">최근 오답: 2024.10.05</span>
+                  </div>
+                  <div class="question-body text-sm dark:text-gray-200 text-gray-800 leading-relaxed">
+                    <span class="katex-inline">\sin\theta + \cos\theta = \frac{1}{2}</span>일 때, <span class="katex-inline">\sin\theta \cos\theta</span>의 값은?
+                  </div>
+                  <div class="mt-2 flex items-center gap-3 text-[11px] dark:text-gray-500 text-gray-400">
+                    <span>출처: 한영고 2024 2학기 중간</span>
+                    <span>·</span>
+                    <span>오답일: 10/05</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 오답 문제 5 -->
+            <div class="wrong-item rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition" data-id="w5">
+              <div class="flex items-start gap-3">
+                <div class="custom-check checked flex-shrink-0 mt-1" onclick="toggleWrongItem(this)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400">3회 오답</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수열</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수학Ⅰ</span>
+                    <span class="flex items-center gap-0.5 text-[10px]"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span></span>
+                    <span class="ml-auto text-[10px] dark:text-gray-600 text-gray-400">최근 오답: 2025.01.08</span>
+                  </div>
+                  <div class="question-body text-sm dark:text-gray-200 text-gray-800 leading-relaxed">
+                    등차수열 <span class="katex-inline">\{a_n\}</span>에서 <span class="katex-inline">a_3 = 7</span>, <span class="katex-inline">a_7 = 19</span>일 때, <span class="katex-inline">\displaystyle\sum_{k=1}^{10} a_k</span>의 값을 구하시오.
+                  </div>
+                  <div class="mt-2 flex items-center gap-3 text-[11px] dark:text-gray-500 text-gray-400">
+                    <span>출처: 빠른테스트 #2847</span>
+                    <span>·</span>
+                    <span>오답일: 09/12, 10/20, 01/08</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 오답 문제 6 -->
+            <div class="wrong-item rounded-xl border dark:border-gray-800/60 border-gray-200 dark:bg-[#111827] bg-white p-4 theme-transition" data-id="w6">
+              <div class="flex items-start gap-3">
+                <div class="custom-check checked flex-shrink-0 mt-1" onclick="toggleWrongItem(this)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap mb-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold dark:bg-yellow-500/20 bg-yellow-100 dark:text-yellow-400 text-yellow-700">2회 오답</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">지수함수</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium dark:bg-gray-800 bg-gray-100 dark:text-gray-400 text-gray-600">수학Ⅰ</span>
+                    <span class="flex items-center gap-0.5 text-[10px]"><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span><span class="star">★</span></span>
+                    <span class="ml-auto text-[10px] dark:text-gray-600 text-gray-400">최근 오답: 2025.01.15</span>
+                  </div>
+                  <div class="question-body text-sm dark:text-gray-200 text-gray-800 leading-relaxed">
+                    부등식 <span class="katex-inline">\left(\frac{1}{4}\right)^x \leq 8^{x-2}</span>를 만족하는 자연수 <span class="katex-inline">x</span>의 최솟값을 구하시오.
+                  </div>
+                  <div class="mt-2 flex items-center gap-3 text-[11px] dark:text-gray-500 text-gray-400">
+                    <span>출처: 숙명여고 2024 1학기 중간</span>
+                    <span>·</span>
+                    <span>오답일: 12/20, 01/15</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 플로팅 바 -->
+    <div id="floating-bar" class="floating-bar fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div class="flex items-center gap-4 px-6 py-3 rounded-2xl dark:bg-[#1a1f2e] bg-white border dark:border-gray-700 border-gray-200 shadow-2xl">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-sm font-bold" id="selected-count">20</div>
+          <span class="text-sm dark:text-gray-300 text-gray-700 font-medium">문제 선택됨</span>
+        </div>
+        <div class="w-px h-6 dark:bg-gray-700 bg-gray-200"></div>
+        <button class="px-3 py-1.5 text-xs rounded-lg border dark:border-gray-700 border-gray-300 dark:text-gray-400 text-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 transition-colors font-medium flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          유사문제 추가
+        </button>
+        <button class="px-4 py-2 text-sm rounded-lg text-white font-semibold btn-primary transition-all flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          오답시험 생성
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    let sidebarCollapsed = false;
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainArea = document.getElementById('main-area');
+      const icon = document.getElementById('collapse-icon');
+      sidebarCollapsed = !sidebarCollapsed;
+      if (sidebarCollapsed) {
+        sidebar.style.width = '64px';
+        sidebar.classList.add('collapsed');
+        mainArea.style.marginLeft = '64px';
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        sidebar.style.width = '240px';
+        sidebar.classList.remove('collapsed');
+        mainArea.style.marginLeft = '240px';
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+    function toggleSubmenu(id) {
+      const sub = document.getElementById(id);
+      const arrow = document.getElementById(id.replace('-sub', '-arrow'));
+      sub.classList.toggle('open');
+      if (arrow) arrow.style.transform = sub.classList.contains('open') ? 'rotate(0deg)' : 'rotate(-90deg)';
+    }
+    function toggleTheme() { document.documentElement.classList.toggle('dark'); }
+    function toggleDropdown(id) {
+      const container = document.getElementById(id);
+      const menu = container.querySelector('.dropdown-menu');
+      document.querySelectorAll('.dropdown-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
+      menu.classList.toggle('open');
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+      }
+    });
+    function toggleWrongItem(checkEl) {
+      checkEl.classList.toggle('checked');
+      const item = checkEl.closest('.wrong-item');
+      item.classList.toggle('excluded', !checkEl.classList.contains('checked'));
+      updateCount();
+    }
+    function updateCount() {
+      const checked = document.querySelectorAll('.wrong-item .custom-check.checked').length;
+      document.getElementById('include-count').textContent = checked;
+      document.getElementById('selected-count').textContent = checked;
+      const bar = document.getElementById('floating-bar');
+      if (checked > 0) { bar.classList.remove('hidden'); } else { bar.classList.add('hidden'); }
+    }
+    function toggleAllInclude() {
+      const checks = document.querySelectorAll('.wrong-item .custom-check');
+      const allChecked = [...checks].every(c => c.classList.contains('checked'));
+      checks.forEach(c => {
+        if (allChecked) { c.classList.remove('checked'); c.closest('.wrong-item').classList.add('excluded'); }
+        else { c.classList.add('checked'); c.closest('.wrong-item').classList.remove('excluded'); }
+      });
+      updateCount();
+    }
+    // KaTeX 렌더링
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.katex-inline').forEach(el => {
+        try { katex.render(el.textContent, el, { throwOnError: false, displayMode: false }); } catch(e) {}
+      });
+    });
+  </script>
+</body>
+</html>

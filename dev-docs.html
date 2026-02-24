@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문제은행 v4 — 개발문서</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard Variable', 'Pretendard', 'system-ui', 'sans-serif'],
+            serif: ['KoPubBatang', 'Noto Serif KR', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef5ff', 100: '#d9e8ff', 200: '#bcd8ff', 300: '#8ec0ff',
+              400: '#599eff', 500: '#3478ff', 600: '#1b57f5', 700: '#1443e1',
+              800: '#1736b6', 900: '#19338f', 950: '#142157',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+    .tab-btn { position: relative; transition: all 0.2s ease; }
+    .tab-btn::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #3478ff; transform: scaleX(0); transition: transform 0.2s ease; }
+    .tab-btn.active::after { transform: scaleX(1); }
+    .tab-btn.active { color: #3478ff; }
+    .tab-panel { display: none; animation: fadeIn 0.25s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 24px; margin-bottom: 20px; transition: border-color 0.2s; }
+    .card:hover { border-color: #374151; }
+    .card-header { font-size: 16px; font-weight: 700; color: #f9fafb; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-header .icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; background: #1e3a5f; color: #599eff; border-radius: 6px; font-size: 11px; flex-shrink: 0; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th { text-align: left; padding: 10px 12px; background: #0d1117; color: #8b949e; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #1f2937; }
+    .data-table td { padding: 10px 12px; color: #d1d5db; border-bottom: 1px solid #111827; vertical-align: top; }
+    .data-table tr:hover td { background: #0d1117; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-blue { background: #1e3a5f; color: #599eff; }
+    .badge-green { background: #14412a; color: #4ade80; }
+    .badge-yellow { background: #3f3410; color: #fbbf24; }
+    .badge-red { background: #3f1010; color: #f87171; }
+    .badge-purple { background: #2e1a47; color: #c084fc; }
+    .badge-gray { background: #1f2937; color: #9ca3af; }
+    .badge-orange { background: #3f2810; color: #fb923c; }
+    .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #111827; }
+    .check-item:last-child { border-bottom: none; }
+    .check-box { width: 18px; height: 18px; border: 2px solid #374151; border-radius: 4px; flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .check-box.checked { background: #3478ff; border-color: #3478ff; }
+    .check-box.checked::after { content: '✓'; color: white; font-size: 11px; font-weight: 700; }
+    .check-item.done .check-label { text-decoration: line-through; color: #6b7280; }
+    .note-block { background: #0d1117; border-left: 3px solid #3478ff; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #8b949e; line-height: 1.7; }
+    .note-block.warn { border-left-color: #fbbf24; }
+    .note-block.success { border-left-color: #4ade80; }
+    .progress-bar { height: 6px; background: #1f2937; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #3478ff, #599eff); border-radius: 3px; transition: width 0.5s ease; }
+    .timeline-item { position: relative; padding-left: 28px; padding-bottom: 20px; }
+    .timeline-item::before { content: ''; position: absolute; left: 5px; top: 8px; bottom: -4px; width: 1px; background: #1f2937; }
+    .timeline-item:last-child::before { display: none; }
+    .timeline-dot { position: absolute; left: 0; top: 6px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #374151; background: #111827; }
+    .timeline-item.active .timeline-dot { border-color: #3478ff; background: #3478ff; }
+    .timeline-item.completed .timeline-dot { border-color: #4ade80; background: #4ade80; }
+    .menu-card { padding: 16px; border-radius: 8px; background: #0d1117; border: 1px solid #1f2937; }
+    .menu-card .sub { margin-left: 32px; margin-top: 8px; color: #9ca3af; font-size: 13px; line-height: 1.8; }
+  </style>
+</head>
+<body class="bg-[#0a0e17] text-gray-300 min-h-screen">
+
+  <!-- 헤더 -->
+  <header class="sticky top-0 z-50 bg-[#0a0e17]/80 backdrop-blur-md border-b border-gray-800/50">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">B4</div>
+          <div>
+            <h1 class="text-white font-bold text-[15px] leading-tight">문제은행 v4</h1>
+            <p class="text-[11px] text-gray-500">개발문서</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-gray-500" id="lastUpdated"></span>
+          <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 transition-colors" title="다크모드 토글">◐</button>
+        </div>
+      </div>
+      <nav class="flex gap-1 -mb-px overflow-x-auto" id="tabNav">
+        <button class="tab-btn active px-4 py-3 text-sm font-semibold text-gray-400 hover:text-gray-200 whitespace-nowrap transition-colors" data-tab="plan">계획서</button>
+        <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-gray-200 whitespace-nowrap transition-colors" data-tab="screens">화면 구조도</button>
+        <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-gray-200 whitespace-nowrap transition-colors" data-tab="datamap">데이터맵</button>
+        <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-gray-200 whitespace-nowrap transition-colors" data-tab="database">DB설계</button>
+        <button class="tab-btn px-4 py-3 text-sm font-semibold text-gray-400 hover:text-gray-200 whitespace-nowrap transition-colors" data-tab="checklist">체크리스트</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-8">
+
+    <!-- ==================== 계획서 탭 ==================== -->
+    <div class="tab-panel active" id="panel-plan">
+
+      <!-- 프로젝트 개요 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> 프로젝트 개요</div>
+        <table class="data-table"><tbody>
+          <tr><td class="text-gray-500 w-36">프로젝트명</td><td class="text-white font-semibold">문제은행 v4 (Bank4)</td></tr>
+          <tr><td class="text-gray-500">성격</td><td>프론트엔드 풀 리빌드 (기존 백엔드 REST API 유지)</td></tr>
+          <tr><td class="text-gray-500">대상</td><td>수학 학원 — 20만건+ 문제 DB 운영 중 (v3 → v4)</td></tr>
+          <tr><td class="text-gray-500">배포</td><td>Vercel</td></tr>
+          <tr><td class="text-gray-500">DB</td><td>MySQL (기존 서버, 태깅 컬럼 추가 예정) + Vector DB (신규)</td></tr>
+          <tr><td class="text-gray-500">기술스택</td><td>
+            <span class="badge badge-blue">React 18</span>
+            <span class="badge badge-blue">TypeScript</span>
+            <span class="badge badge-blue">Vite</span>
+            <span class="badge badge-blue">Tailwind CSS</span>
+            <span class="badge badge-purple">KaTeX</span>
+          </td></tr>
+        </tbody></table>
+      </div>
+
+      <!-- v3 현재 메뉴 구조 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📂</span> v3 현재 메뉴 구조</div>
+        <div class="note-block">v3의 모든 기능을 유지하면서 UI/UX를 전면 개선하고 AI 기능을 추가합니다. 제거할 기능 없음.</div>
+        <div class="space-y-3 mt-4 text-sm">
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">📝 시험출제</div>
+            <div class="sub">
+              • <span class="text-gray-300">목록</span> — 시험지 목록 관리<br>
+              • <span class="text-gray-300">일일테스트</span> — 일일 테스트 생성<br>
+              • <span class="text-gray-300">빠른테스트</span> — 옵션 자동화로 간편 시험지 생성<br>
+              • <span class="text-gray-300">제로테스트 / 브릿지테스트</span> — 특수 목적 테스트<br>
+              • <span class="text-gray-300">진단평가</span> — 학생 수준 진단<br>
+              • <span class="text-gray-300">학교별 기출</span> — 학교별 기출문제 관리
+            </div>
+          </div>
+          <div class="menu-card">
+            <div class="text-white font-semibold">📊 성적처리</div>
+            <div class="sub">시험 응시 후 성적처리 진행 및 성적표 생성</div>
+          </div>
+          <div class="menu-card">
+            <div class="text-white font-semibold">💊 클리닉</div>
+            <div class="sub">성적처리 완료 후 오답노트 및 유사문항 테스트 생성/응시</div>
+          </div>
+          <div class="menu-card">
+            <div class="text-white font-semibold">🔄 오답시험 만들기</div>
+            <div class="sub">학생의 전체 테스트 이력에서 누적 오답문항 확인 → 오답 기반 새 시험 생성</div>
+          </div>
+          <div class="menu-card">
+            <div class="text-white font-semibold">📘 개념나래</div>
+            <div class="sub">자사 출판 교재의 온라인 문제풀이, 채점, 성적, 오답, 유사문항 테스트 관리</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- v3 → v4 개선 목표 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">🎯</span> v3 → v4 핵심 개선 목표</div>
+        <table class="data-table">
+          <thead><tr><th>영역</th><th>v3 문제점</th><th>v4 개선 방향</th><th>우선순위</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="text-white font-medium">UI/UX</td>
+              <td>낡은 디자인, 사용 편의성 부족</td>
+              <td>모던 UI, 역할별 최적화 워크플로우</td>
+              <td><span class="badge badge-red">최상</span></td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">수식 렌더링</td>
+              <td>수식 출력 시 행간 깨짐, 분수로 인한 레이아웃 틀어짐, 폰트 품질 미흡</td>
+              <td>KaTeX(화면) + 서버 XeLaTeX(PDF), KoPubBatang 본문, 행간 정규화</td>
+              <td><span class="badge badge-red">최상</span></td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">문제 검색</td>
+              <td>20만건 중 원하는 문제 찾기 비효율적</td>
+              <td>고급 필터, AI 기반 검색, 벡터 유사도 검색</td>
+              <td><span class="badge badge-red">최상</span></td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">시험지 제작</td>
+              <td>문제 선택~시험지 완성까지 번거로움</td>
+              <td>드래그앤드롭, AI 자동 구성, 원클릭 생성</td>
+              <td><span class="badge badge-red">최상</span></td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">OCR 파이프라인</td>
+              <td>교재팀이 수동으로 시험지 스캔→OCR→낙서 제거→LaTeX 변환→업로드</td>
+              <td>AI OCR 통합 워크플로우 (스캔→자동 낙서 제거→LaTeX 변환→미리보기→등록)</td>
+              <td><span class="badge badge-yellow">상</span></td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">AI 기능</td>
+              <td>없음</td>
+              <td>유사문제 추천, 난이도 예측, 자동 태깅, 시험지 최적화</td>
+              <td><span class="badge badge-yellow">상</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 사용자 역할 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">👥</span> 사용자 역할 & 권한</div>
+        <table class="data-table">
+          <thead><tr><th>역할</th><th>주요 업무</th><th>핵심 사용 패턴</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="text-white font-medium">강사</td>
+              <td><span class="badge badge-blue">시험 출제</span></td>
+              <td>문제 조합 → 시험지 생성 위주. 빠른테스트 다빈도 사용. 학교별 기출 활용.</td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">조교</td>
+              <td><span class="badge badge-green">채점/성적처리</span></td>
+              <td>학생 시험 채점, 성적표 생성, 클리닉(오답노트) 관리.</td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">교재팀</td>
+              <td><span class="badge badge-purple">콘텐츠 관리</span></td>
+              <td>문제 등록, OCR로 시험지 스캔→낙서 제거→LaTeX 변환→업로드. 개념나래 교재 관리.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 비즈니스 우선순위 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">🏢</span> 비즈니스 우선순위 & 런칭 전략</div>
+        <div class="note-block success">
+          <strong>핵심 원칙: 완성도 &gt; 속도.</strong> 시스템 완성도, 인쇄 품질, AI 기능이 만족할 수준이 되어야 오픈. 급하지 않음.
+        </div>
+        <div class="mt-4 space-y-4 text-sm">
+          <div class="p-4 rounded-lg bg-[#0d1117] border border-green-900/50">
+            <div class="text-green-400 font-semibold mb-2">📌 점진적 오픈 전략</div>
+            <div class="text-gray-400 leading-relaxed">
+              모든 메뉴를 동시에 오픈하지 않고, <span class="text-white font-medium">1차로 "학교별 기출" + "오답시험 만들기"</span> 먼저 구현.<br>
+              → 강사들의 실사용 후기 수집 → 피드백 반영 → 2차 오픈 범위 결정.
+            </div>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>오픈 단계</th><th>대상 기능</th><th>목적</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-green">1차 오픈</span></td>
+                <td class="text-white">학교별 기출 + 오답시험 만들기</td>
+                <td>핵심 워크플로우 검증, 수식 인쇄 품질 확인, 강사 피드백</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-yellow">2차 오픈</span></td>
+                <td>시험출제 전체 + 성적처리</td>
+                <td>1차 피드백 반영 후 확장</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-gray">3차 오픈</span></td>
+                <td>클리닉 + 개념나래 + OCR + AI + 통계</td>
+                <td>전체 기능 완성</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 기술 스택 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">⚙️</span> 기술 스택</div>
+        <table class="data-table">
+          <thead><tr><th>영역</th><th>기술</th><th>선정 이유</th></tr></thead>
+          <tbody>
+            <tr><td class="text-white font-medium">프레임워크</td><td>React 18 + TypeScript</td><td>기존 TeamPro와 동일, 생태계 활용</td></tr>
+            <tr><td class="text-white font-medium">빌드</td><td>Vite</td><td>빠른 HMR, ESM 기반</td></tr>
+            <tr><td class="text-white font-medium">스타일링</td><td>Tailwind CSS</td><td>유틸리티 퍼스트, 빠른 프로토타이핑</td></tr>
+            <tr><td class="text-white font-medium">수식 렌더링</td><td>KaTeX (화면) / XeLaTeX (PDF)</td><td>화면 속도 + 인쇄 품질 분리 전략</td></tr>
+            <tr><td class="text-white font-medium">폰트</td><td>Pretendard (UI) / KoPubBatang (문제)</td><td>관리화면 모던 + 인쇄물 교재급 품질</td></tr>
+            <tr><td class="text-white font-medium">상태관리</td><td>미정 (Zustand 유력)</td><td>—</td></tr>
+            <tr><td class="text-white font-medium">API 통신</td><td>REST API (기존 서버)</td><td>기존 백엔드 유지</td></tr>
+            <tr><td class="text-white font-medium">Vector DB</td><td>미정</td><td>AI 유사문제 검색용</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 개발 로드맵 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">🚀</span> 개발 로드맵</div>
+        <div class="note-block">비즈니스 우선순위 반영: 학교별 기출 + 오답시험을 가장 먼저 구현합니다.</div>
+
+        <div class="mt-4">
+          <div class="timeline-item active">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm">Phase 0 — 설계 & 프로토타입</span>
+                <span class="badge badge-blue">현재</span>
+              </div>
+              <p class="text-gray-400 text-sm">개발문서 작성 → HTML 목업 전체 화면 제작 → 사장님 디자인 승인</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm">Phase 1 — 프로젝트 기반 구축</span>
+                <span class="badge badge-gray">대기</span>
+              </div>
+              <p class="text-gray-400 text-sm">Vite + React + TS 셋업, 레이아웃, 라우팅, 공통 컴포넌트, 수식 렌더링 기반, 다크모드</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm">Phase 2 — 학교별 기출 + 오답시험</span>
+                <span class="badge badge-green">1차 오픈</span>
+              </div>
+              <p class="text-gray-400 text-sm">학교별 기출문제 검색/조회, 오답시험 생성 워크플로우, 시험지 미리보기/인쇄/PDF, 수식 품질 검증</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm">Phase 3 — 시험출제 전체 + 성적처리</span>
+                <span class="badge badge-gray">대기</span>
+              </div>
+              <p class="text-gray-400 text-sm">일일/빠른/제로/브릿지 테스트, 진단평가, 성적처리, 성적표 생성</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm">Phase 4 — 클리닉 + 개념나래 + OCR</span>
+                <span class="badge badge-gray">대기</span>
+              </div>
+              <p class="text-gray-400 text-sm">오답노트, 유사문항 테스트, 개념나래 교재 온라인, AI OCR 콘텐츠 파이프라인</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm">Phase 5 — AI 기능 + 통계</span>
+                <span class="badge badge-gray">대기</span>
+              </div>
+              <p class="text-gray-400 text-sm">유사문제 추천, 난이도 예측, 시험지 최적화, 자동 태깅, 통계 대시보드</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 사전 확인 항목 -->
+      <div class="card" style="border-color: #1e3a5f;">
+        <div class="card-header"><span class="icon">❓</span> 사전 확인 항목</div>
+        <table class="data-table">
+          <thead><tr><th>항목</th><th>상태</th><th>내용</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="text-white font-medium">v3 현재 화면 구조</td>
+              <td><span class="badge badge-green">확인 완료</span></td>
+              <td>시험출제(6개 하위), 성적처리, 클리닉, 오답시험, 개념나래</td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">사용자 역할</td>
+              <td><span class="badge badge-green">확인 완료</span></td>
+              <td>강사(출제), 조교(채점), 교재팀(콘텐츠/OCR)</td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">API 엔드포인트</td>
+              <td><span class="badge badge-yellow">추후 제공</span></td>
+              <td>기존 REST API — 필요 단계에서 공유 예정</td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">비즈니스 우선순위</td>
+              <td><span class="badge badge-green">확인 완료</span></td>
+              <td>학교별기출 + 오답시험 1차 오픈, 점진적 확장</td>
+            </tr>
+            <tr>
+              <td class="text-white font-medium">디자인 레퍼런스</td>
+              <td><span class="badge badge-yellow">확인 필요</span></td>
+              <td>선호하는 디자인 방향, 참고 사이트</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== 화면 구조도 탭 ==================== -->
+    <div class="tab-panel" id="panel-screens">
+
+      <!-- v3 현재 구조 -->
+      <div class="card" style="border-color: #854d0e40;">
+        <div class="card-header"><span class="icon" style="background:#3f2810;color:#fb923c;">📂</span> v3 현재 메뉴 구조 <span class="badge badge-orange ml-2">v3</span></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          <div class="p-3 rounded-lg bg-[#0d1117] border border-yellow-900/30">
+            <div class="text-yellow-400/80 font-semibold mb-1">📝 시험출제</div>
+            <div class="text-gray-500 text-xs leading-relaxed">목록 / 일일테스트 / 빠른테스트<br>제로·브릿지 / 진단평가 / 학교별기출</div>
+          </div>
+          <div class="p-3 rounded-lg bg-[#0d1117] border border-yellow-900/30">
+            <div class="text-yellow-400/80 font-semibold mb-1">📊 성적처리</div>
+            <div class="text-gray-500 text-xs">채점 / 성적표 생성</div>
+          </div>
+          <div class="p-3 rounded-lg bg-[#0d1117] border border-yellow-900/30">
+            <div class="text-yellow-400/80 font-semibold mb-1">💊 클리닉</div>
+            <div class="text-gray-500 text-xs">오답노트 / 유사문항 테스트</div>
+          </div>
+          <div class="p-3 rounded-lg bg-[#0d1117] border border-yellow-900/30">
+            <div class="text-yellow-400/80 font-semibold mb-1">🔄 오답시험</div>
+            <div class="text-gray-500 text-xs">누적 오답 → 시험 생성</div>
+          </div>
+          <div class="p-3 rounded-lg bg-[#0d1117] border border-yellow-900/30">
+            <div class="text-yellow-400/80 font-semibold mb-1">📘 개념나래</div>
+            <div class="text-gray-500 text-xs">교재 온라인 / 채점 / 오답</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- v4 화면 구조도 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">🗂️</span> v4 화면 구조도 (Site Map)</div>
+        <div class="note-block">v3 전체 기능 유지 + 콘텐츠 관리·AI 센터·통계 신규 추가. ⭐ = 1차 오픈 대상.</div>
+
+        <div class="mt-4 space-y-3 text-sm ml-2">
+          <!-- 대시보드 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">📊</span> 대시보드 <span class="badge badge-blue">NEW</span>
+            </div>
+            <div class="sub">전체 현황, 최근 활동, 시험지 생성 현황, AI 요약</div>
+          </div>
+
+          <!-- 시험출제 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">📝</span> 시험출제 <span class="badge badge-gray">v3 유지+개선</span>
+            </div>
+            <div class="sub">
+              • <span class="text-gray-300">시험지 목록</span> — 생성된 시험지 관리<br>
+              • <span class="text-gray-300">일일테스트</span> — 일일 테스트 생성<br>
+              • <span class="text-gray-300">빠른테스트</span> — 옵션 자동화 간편 생성<br>
+              • <span class="text-gray-300">제로테스트 / 브릿지테스트</span> — 특수 목적<br>
+              • <span class="text-gray-300">진단평가</span> — 학생 수준 진단<br>
+              • <span class="text-gray-300">학교별 기출</span> — 학교별 기출문제 <span class="badge badge-green">⭐ 1차</span>
+            </div>
+          </div>
+
+          <!-- 성적처리 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">📊</span> 성적처리 <span class="badge badge-gray">v3 유지+개선</span>
+            </div>
+            <div class="sub">• 시험 채점<br>• 성적표 생성</div>
+          </div>
+
+          <!-- 클리닉 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">💊</span> 클리닉 <span class="badge badge-gray">v3 유지+개선</span>
+            </div>
+            <div class="sub">• 오답노트<br>• 유사문항 테스트 (AI 추천 연동)</div>
+          </div>
+
+          <!-- 오답시험 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">🔄</span> 오답시험 만들기 <span class="badge badge-green">⭐ 1차</span>
+            </div>
+            <div class="sub">• 누적 오답 조회 (학생별 전체 테스트 이력)<br>• 오답 기반 시험 생성</div>
+          </div>
+
+          <!-- 개념나래 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">📘</span> 개념나래 <span class="badge badge-gray">v3 유지+개선</span>
+            </div>
+            <div class="sub">• 교재 목록<br>• 온라인 문제풀이<br>• 채점/성적/오답 관리</div>
+          </div>
+
+          <!-- 콘텐츠 관리 -->
+          <div class="menu-card" style="border-color: #1e3a5f;">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">📦</span> 콘텐츠 관리 <span class="badge badge-blue">NEW</span>
+            </div>
+            <div class="sub">
+              • <span class="text-gray-300">문제 등록/수정</span> — 에디터, 수식 입력, 이미지 첨부<br>
+              • <span class="text-gray-300">AI OCR 업로드</span> — 시험지 스캔 → 낙서 제거 → LaTeX 변환 → 등록<br>
+              • <span class="text-gray-300">카테고리/태그 관리</span> — 과목/단원/세부단원 트리, AI 태깅
+            </div>
+          </div>
+
+          <!-- AI 센터 -->
+          <div class="menu-card" style="border-color: #581c8740;">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-purple-900/50 text-purple-400 rounded flex items-center justify-center text-[10px]">🤖</span> AI 센터 <span class="badge badge-purple">NEW</span>
+            </div>
+            <div class="sub">
+              • 유사문제 추천 (벡터 검색)<br>
+              • 난이도 예측<br>
+              • 자동 분류/태깅<br>
+              • 시험지 최적화 (학생 수준 맞춤)
+            </div>
+          </div>
+
+          <!-- 통계 -->
+          <div class="menu-card" style="border-color: #1e3a5f;">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">📈</span> 통계/분석 <span class="badge badge-blue">NEW</span>
+            </div>
+            <div class="sub">문제 사용 빈도, 정답률, 난이도 분포, 시험지 이력</div>
+          </div>
+
+          <!-- 설정 -->
+          <div class="menu-card">
+            <div class="text-white font-semibold flex items-center gap-2">
+              <span class="w-5 h-5 bg-brand-900/50 text-brand-400 rounded flex items-center justify-center text-[10px]">⚙️</span> 설정
+            </div>
+            <div class="sub">사용자 관리/권한, 시스템 설정, 가져오기/내보내기</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 역할별 사용자 흐름 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">🔀</span> 역할별 사용자 흐름 (User Flow)</div>
+        <div class="space-y-6 text-sm">
+          <div>
+            <div class="text-white font-semibold mb-2">👨‍🏫 강사 — 시험 출제</div>
+            <div class="flex items-center gap-2 flex-wrap text-gray-400">
+              <span class="badge badge-blue">시험출제</span><span>→</span>
+              <span class="badge badge-blue">조건/문제 선택</span><span>→</span>
+              <span class="badge badge-blue">시험지 생성</span><span>→</span>
+              <span class="badge badge-blue">미리보기</span><span>→</span>
+              <span class="badge badge-green">PDF/인쇄</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-white font-semibold mb-2">👩‍💼 조교 — 채점/성적</div>
+            <div class="flex items-center gap-2 flex-wrap text-gray-400">
+              <span class="badge badge-blue">성적처리</span><span>→</span>
+              <span class="badge badge-blue">채점</span><span>→</span>
+              <span class="badge badge-green">성적표 생성</span><span>→</span>
+              <span class="badge badge-blue">클리닉(오답노트)</span><span>→</span>
+              <span class="badge badge-purple">유사문항 테스트</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-white font-semibold mb-2">📚 교재팀 — 콘텐츠 등록</div>
+            <div class="flex items-center gap-2 flex-wrap text-gray-400">
+              <span class="badge badge-blue">시험지 스캔</span><span>→</span>
+              <span class="badge badge-purple">AI OCR (낙서제거+LaTeX)</span><span>→</span>
+              <span class="badge badge-blue">미리보기/수정</span><span>→</span>
+              <span class="badge badge-purple">AI 분류/태깅</span><span>→</span>
+              <span class="badge badge-green">문제 등록</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 목업 진행 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">🎨</span> HTML 목업 진행 현황</div>
+        <table class="data-table">
+          <thead><tr><th>화면</th><th>파일</th><th>단계</th><th>상태</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="text-white">학교별 기출</td>
+              <td class="text-gray-500 font-mono text-xs">mockup-school-exam.html</td>
+              <td><span class="badge badge-green">⭐ 1차</span></td>
+              <td><span class="badge badge-gray">대기</span></td>
+            </tr>
+            <tr>
+              <td class="text-white">오답시험 만들기</td>
+              <td class="text-gray-500 font-mono text-xs">mockup-wrong-answer.html</td>
+              <td><span class="badge badge-green">⭐ 1차</span></td>
+              <td><span class="badge badge-gray">대기</span></td>
+            </tr>
+            <tr>
+              <td class="text-white">시험지 미리보기/인쇄</td>
+              <td class="text-gray-500 font-mono text-xs">mockup-exam-preview.html</td>
+              <td><span class="badge badge-green">⭐ 1차</span></td>
+              <td><span class="badge badge-gray">대기</span></td>
+            </tr>
+            <tr><td class="text-gray-400">대시보드</td><td class="text-gray-600 font-mono text-xs">mockup-dashboard.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">시험출제 (일일/빠른/진단 등)</td><td class="text-gray-600 font-mono text-xs">mockup-exam-create.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">성적처리</td><td class="text-gray-600 font-mono text-xs">mockup-grading.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">클리닉</td><td class="text-gray-600 font-mono text-xs">mockup-clinic.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">개념나래</td><td class="text-gray-600 font-mono text-xs">mockup-textbook.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">콘텐츠 관리 (문제등록/OCR)</td><td class="text-gray-600 font-mono text-xs">mockup-content.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">AI 센터</td><td class="text-gray-600 font-mono text-xs">mockup-ai-center.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">통계/분석</td><td class="text-gray-600 font-mono text-xs">mockup-analytics.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+            <tr><td class="text-gray-400">설정</td><td class="text-gray-600 font-mono text-xs">mockup-settings.html</td><td></td><td><span class="badge badge-gray">대기</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== 데이터맵 탭 ==================== -->
+    <div class="tab-panel" id="panel-datamap">
+      <div class="card">
+        <div class="card-header"><span class="icon">🔗</span> 데이터 흐름도 (Data Flow)</div>
+        <div class="note-block">API 엔드포인트와 DB 구조 확인 후 구체화 예정. 아래는 논의된 아키텍처 초안입니다.</div>
+        <div class="mt-6 p-6 rounded-lg bg-[#0d1117] border border-gray-800 text-sm font-mono">
+          <pre class="text-gray-400 leading-relaxed">
+<span class="text-brand-400">┌─────────────────────────────────────────────────────────┐</span>
+<span class="text-brand-400">│</span>  <span class="text-white font-bold">프론트엔드 (React + Vite)</span>  ← Vercel 배포           <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>                                                         <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>  │ 시험출제  │ │ 성적처리 │ │ AI 센터  │ │ 콘텐츠   │  <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>  └─────┬────┘ └─────┬────┘ └─────┬────┘ └─────┬────┘  <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>        │            │            │            │         <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>        └────────────┼────────────┼────────────┘         <span class="text-brand-400">│</span>
+<span class="text-brand-400">│</span>                     │            │                      <span class="text-brand-400">│</span>
+<span class="text-brand-400">└─────────────────────┼────────────┼──────────────────────┘</span>
+                      │            │
+              <span class="text-green-400">REST API</span>     <span class="text-purple-400">AI API</span>
+                      │            │
+<span class="text-yellow-400">┌─────────────────────┼────────────┼──────────────────────┐</span>
+<span class="text-yellow-400">│</span>  <span class="text-white font-bold">백엔드 서버 (기존)</span>  │            │                      <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>                      │            │                      <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   ┌──────────────────┼──┐   ┌────┼────────────────┐    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │   <span class="text-green-400">MySQL</span>           │  │   │  <span class="text-purple-400">Vector DB</span>        │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │                    │  │   │                    │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │  • 문제 (20만건+) │  │   │  • 문제 임베딩     │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │  • 카테고리       │  │   │  • 유사도 인덱스   │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │  • 시험지/성적    │  │   │                    │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │  • 태그 (추가예정)│  │   │                    │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │  • 사용자/학생    │  │   │                    │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   │  • 오답이력       │  │   │                    │    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>   └────────────────────┘  │   └────────────────────┘    <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">│</span>                            │                             <span class="text-yellow-400">│</span>
+<span class="text-yellow-400">└────────────────────────────┼─────────────────────────────┘</span>
+                             │
+                      <span class="text-purple-400">External AI</span>
+                             │
+                  ┌──────────┼──────────┐
+                  │          │          │
+            <span class="text-purple-400">OCR API</span>   <span class="text-purple-400">LLM API</span>  <span class="text-purple-400">Embedding</span>
+          (Mathpix등)  (GPT등)    (벡터화)
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="icon">🌐</span> API 엔드포인트 (초안)</div>
+        <div class="note-block">기존 API 구조 확인 후 실제 엔드포인트로 업데이트 예정</div>
+        <table class="data-table">
+          <thead><tr><th>영역</th><th>Method</th><th>Endpoint</th><th>설명</th></tr></thead>
+          <tbody>
+            <tr><td class="text-white font-medium" rowspan="4">문제</td><td><span class="badge badge-green">GET</span></td><td class="font-mono text-xs">/api/questions</td><td>문제 목록 (필터, 페이지네이션)</td></tr>
+            <tr><td><span class="badge badge-green">GET</span></td><td class="font-mono text-xs">/api/questions/:id</td><td>문제 상세</td></tr>
+            <tr><td><span class="badge badge-blue">POST</span></td><td class="font-mono text-xs">/api/questions</td><td>문제 등록</td></tr>
+            <tr><td><span class="badge badge-yellow">PUT</span></td><td class="font-mono text-xs">/api/questions/:id</td><td>문제 수정</td></tr>
+            <tr><td class="text-white font-medium" rowspan="2">시험지</td><td><span class="badge badge-green">GET</span></td><td class="font-mono text-xs">/api/exams</td><td>시험지 목록</td></tr>
+            <tr><td><span class="badge badge-blue">POST</span></td><td class="font-mono text-xs">/api/exams</td><td>시험지 생성</td></tr>
+            <tr><td class="text-white font-medium" rowspan="2">성적</td><td><span class="badge badge-green">GET</span></td><td class="font-mono text-xs">/api/grades/:studentId</td><td>학생 성적 조회</td></tr>
+            <tr><td><span class="badge badge-blue">POST</span></td><td class="font-mono text-xs">/api/grades</td><td>채점 결과 저장</td></tr>
+            <tr><td class="text-white font-medium">오답</td><td><span class="badge badge-green">GET</span></td><td class="font-mono text-xs">/api/wrong-answers/:studentId</td><td>누적 오답 조회</td></tr>
+            <tr><td class="text-white font-medium" rowspan="3">AI</td><td><span class="badge badge-purple">POST</span></td><td class="font-mono text-xs">/api/ai/similar</td><td>유사문제 검색 (벡터)</td></tr>
+            <tr><td><span class="badge badge-purple">POST</span></td><td class="font-mono text-xs">/api/ai/ocr</td><td>OCR 문제 변환 (낙서제거+LaTeX)</td></tr>
+            <tr><td><span class="badge badge-purple">POST</span></td><td class="font-mono text-xs">/api/ai/classify</td><td>자동 분류/태깅</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== DB설계 탭 ==================== -->
+    <div class="tab-panel" id="panel-database">
+      <div class="card">
+        <div class="card-header"><span class="icon">🗄️</span> DB 스키마 (초안)</div>
+        <div class="note-block">기존 MySQL 테이블 구조 확인 후 구체화 예정. 아래는 프론트엔드 관점에서 필요한 데이터 구조 초안입니다.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="icon">📝</span> questions — 문제</div>
+        <table class="data-table">
+          <thead><tr><th>컬럼</th><th>타입</th><th>설명</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="text-yellow-400 font-mono text-xs">id</td><td class="font-mono text-xs">INT PK</td><td>문제 고유 ID</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-white font-mono text-xs">content</td><td class="font-mono text-xs">TEXT</td><td>문제 본문 (HTML + LaTeX 혼합)</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-white font-mono text-xs">answer</td><td class="font-mono text-xs">TEXT</td><td>정답</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-white font-mono text-xs">explanation</td><td class="font-mono text-xs">TEXT</td><td>풀이/해설</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-white font-mono text-xs">question_type</td><td class="font-mono text-xs">ENUM</td><td>객관식 / 주관식 / 서술형</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-white font-mono text-xs">difficulty</td><td class="font-mono text-xs">INT</td><td>난이도 (1~5)</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-white font-mono text-xs">category_id</td><td class="font-mono text-xs">INT FK</td><td>카테고리 (과목/단원)</td><td><span class="badge badge-gray">기존</span></td></tr>
+            <tr><td class="text-green-400 font-mono text-xs">ai_tags</td><td class="font-mono text-xs">JSON</td><td>AI 자동 태깅 결과</td><td><span class="badge badge-blue">v4 추가</span></td></tr>
+            <tr><td class="text-green-400 font-mono text-xs">ai_difficulty</td><td class="font-mono text-xs">FLOAT</td><td>AI 예측 난이도</td><td><span class="badge badge-blue">v4 추가</span></td></tr>
+            <tr><td class="text-green-400 font-mono text-xs">embedding_id</td><td class="font-mono text-xs">VARCHAR</td><td>Vector DB 임베딩 참조 ID</td><td><span class="badge badge-blue">v4 추가</span></td></tr>
+            <tr><td class="text-green-400 font-mono text-xs">ocr_source</td><td class="font-mono text-xs">VARCHAR</td><td>OCR 원본 이미지 경로</td><td><span class="badge badge-blue">v4 추가</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="icon">🏷️</span> categories — 카테고리</div>
+        <table class="data-table">
+          <thead><tr><th>컬럼</th><th>타입</th><th>설명</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="text-yellow-400 font-mono text-xs">id</td><td class="font-mono text-xs">INT PK</td><td>카테고리 ID</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">name</td><td class="font-mono text-xs">VARCHAR</td><td>이름 (예: 수학I, 미적분, 수열)</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">parent_id</td><td class="font-mono text-xs">INT FK</td><td>상위 카테고리 (계층 구조)</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">depth</td><td class="font-mono text-xs">INT</td><td>깊이 (0=과목, 1=단원, 2=세부)</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="icon">📄</span> exams — 시험지</div>
+        <table class="data-table">
+          <thead><tr><th>컬럼</th><th>타입</th><th>설명</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="text-yellow-400 font-mono text-xs">id</td><td class="font-mono text-xs">INT PK</td><td>시험지 ID</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">title</td><td class="font-mono text-xs">VARCHAR</td><td>시험지 제목</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">question_ids</td><td class="font-mono text-xs">JSON</td><td>포함된 문제 ID 배열 + 순서</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">created_by</td><td class="font-mono text-xs">INT FK</td><td>생성자</td><td></td></tr>
+            <tr><td class="text-white font-mono text-xs">created_at</td><td class="font-mono text-xs">DATETIME</td><td>생성일</td><td></td></tr>
+            <tr><td class="text-green-400 font-mono text-xs">ai_optimized</td><td class="font-mono text-xs">BOOLEAN</td><td>AI 최적화 여부</td><td><span class="badge badge-blue">v4 추가</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="border-color: #1e3a5f;">
+        <div class="note-block warn">⚠️ 위 스키마는 프론트엔드 관점의 초안입니다. 기존 MySQL 테이블 구조를 확인하면 실제 컬럼명과 타입으로 업데이트됩니다.</div>
+      </div>
+    </div>
+
+    <!-- ==================== 체크리스트 탭 ==================== -->
+    <div class="tab-panel" id="panel-checklist">
+
+      <div class="card">
+        <div class="card-header"><span class="icon">📊</span> 전체 진행률</div>
+        <div class="flex items-center gap-4 mb-2">
+          <div class="progress-bar flex-1"><div class="progress-fill" style="width: 8%"></div></div>
+          <span class="text-white font-bold text-sm">8%</span>
+        </div>
+        <p class="text-gray-500 text-xs">Phase 0 — 설계 & 프로토타입 진행 중</p>
+      </div>
+
+      <!-- Phase 0 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> Phase 0 — 설계 & 프로토타입 <span class="badge badge-blue ml-auto">진행중</span></div>
+        <div class="space-y-1">
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box checked"></div><div><div class="check-label text-sm text-gray-300">프로젝트 폴더 생성 (D:/dev/Bank4)</div></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box checked"></div><div><div class="check-label text-sm text-gray-300">기술 스택 결정 (React 18 + TS + Vite + Tailwind)</div></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box checked"></div><div><div class="check-label text-sm text-gray-300">폰트 조합 결정 (Pretendard + KoPubBatang + KaTeX)</div></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box checked"></div><div><div class="check-label text-sm text-gray-300">v3 현재 구조 파악 & 문서화</div></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box checked"></div><div><div class="check-label text-sm text-gray-300">사용자 역할 & 권한 정의 (강사/조교/교재팀)</div></div></div>
+          <div class="check-item done" onclick="toggleCheck(this)"><div class="check-box checked"></div><div><div class="check-label text-sm text-gray-300">비즈니스 우선순위 확정 (학교별기출+오답시험 1차)</div></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div><div class="check-label text-sm text-gray-300">개발문서 작성 완료</div><div class="text-xs text-gray-500 mt-1">계획서, 화면구조도, 데이터맵, DB설계, 체크리스트</div></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div><div class="check-label text-sm text-gray-300">디자인 방향 & 레퍼런스 확정</div></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div><div class="check-label text-sm text-gray-300">1차 오픈 HTML 목업 (학교별기출, 오답시험, 시험지미리보기)</div></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div><div class="check-label text-sm text-gray-300">전체 화면 HTML 목업 제작</div></div></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div><div class="check-label text-sm text-gray-300">사장님 디자인 승인</div></div></div>
+        </div>
+      </div>
+
+      <!-- Phase 1 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> Phase 1 — 프로젝트 기반 구축 <span class="badge badge-gray ml-auto">대기</span></div>
+        <div class="space-y-1">
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">Vite + React + TS + Tailwind 셋업</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">공통 컴포넌트 (Button, Input, Modal 등)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">레이아웃 (Sidebar + Header) & 라우팅</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">다크모드 & 테마 시스템</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">수식 렌더링 기반 (KaTeX 통합, 행간 정규화)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">API 서비스 레이어 & 타입 정의</div></div>
+        </div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> Phase 2 — 학교별 기출 + 오답시험 <span class="badge badge-green ml-auto">1차 오픈</span></div>
+        <div class="space-y-1">
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">학교별 기출문제 검색/필터/조회</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">오답시험 생성 워크플로우 (누적 오답 조회 → 시험 생성)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">시험지 미리보기</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">PDF 생성 & 교재급 인쇄 (서버 XeLaTeX)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">수식 렌더링 품질 검증 (행간, 분수, 폰트)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">1차 강사 피드백 수집 & 반영</div></div>
+        </div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> Phase 3 — 시험출제 전체 + 성적처리 <span class="badge badge-gray ml-auto">대기</span></div>
+        <div class="space-y-1">
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">일일테스트</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">빠른테스트 (옵션 자동화)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">제로테스트 / 브릿지테스트</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">진단평가</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">성적처리 + 성적표 생성</div></div>
+        </div>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> Phase 4 — 클리닉 + 개념나래 + OCR <span class="badge badge-gray ml-auto">대기</span></div>
+        <div class="space-y-1">
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">오답노트</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">유사문항 테스트</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">개념나래 교재 온라인</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">AI OCR 콘텐츠 파이프라인 (낙서제거→LaTeX→등록)</div></div>
+        </div>
+      </div>
+
+      <!-- Phase 5 -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span> Phase 5 — AI 기능 + 통계 <span class="badge badge-gray ml-auto">대기</span></div>
+        <div class="space-y-1">
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">AI 유사문제 추천 (벡터 검색)</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">AI 난이도 예측</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">AI 시험지 최적화</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">AI 자동 분류/태깅</div></div>
+          <div class="check-item"><div class="check-box"></div><div class="check-label text-sm text-gray-500">통계 대시보드</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t border-gray-800/50 mt-12 py-6">
+    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between text-xs text-gray-600">
+      <span>문제은행 v4 개발문서</span>
+      <span>Bank4 Project — Phase 0</span>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        const targetPanel = document.getElementById('panel-' + btn.dataset.tab);
+        if (targetPanel) targetPanel.classList.add('active');
+      });
+    });
+    function toggleCheck(item) {
+      const box = item.querySelector('.check-box');
+      box.classList.toggle('checked');
+      item.classList.toggle('done');
+    }
+    document.getElementById('lastUpdated').textContent = 
+      '최종 수정: ' + new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+    }
+  </script>
+</body>
+</html>
