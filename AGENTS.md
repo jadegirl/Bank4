@@ -23,3 +23,7 @@
 
 ## 상세 맥락
 - 전체 대화 요약, 결정사항, v3 구조, 비즈니스 전략 → **docs/context.md** 참조
+
+## 필수 skill 참조
+
+- 작업 시작 전 반드시 `project-architect`, `edu-domain` skill을 확인할 것
